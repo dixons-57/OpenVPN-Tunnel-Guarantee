@@ -1,0 +1,24 @@
+#!/bin/bash
+
+iptables -F
+iptables -X
+iptables -t nat -F
+iptables -t nat -X
+
+# this script needs to be run after establishing vpn connection via port 1197
+# on tun interface. Running it before will not allow connection as "native"
+# un-tunnelled DNS requests on port 52 are blocked.
+
+# Allow VPN traffic
+iptables -A INPUT -p udp --sport 1197 -s $1 -j ACCEPT
+iptables -A OUTPUT -p udp --dport 1197 -d $1 -j ACCEPT
+
+# Accept TUN
+iptables -A INPUT    -i tun+ -j ACCEPT
+iptables -A OUTPUT   -o tun+ -j ACCEPT
+iptables -A FORWARD  -i tun+ -j ACCEPT
+
+# Drop the rest
+iptables -A INPUT   -j DROP
+iptables -A OUTPUT  -j DROP
+iptables -A FORWARD -j DROP
